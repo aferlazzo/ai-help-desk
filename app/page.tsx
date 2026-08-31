@@ -78,7 +78,7 @@ export default function Home() {
             <textarea id="problem" value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(input); } }} rows={2} placeholder="What isn’t working?" maxLength={1000} />
             <button type="submit" disabled={!input.trim() || busy} aria-label="Send">↑</button>
           </form>
-          <p className="note">Powered by OpenAI · Messages are sent securely to generate each response</p>
+          <p className="note">Guided troubleshooting · Routine questions run without paid AI usage</p>
         </section>
       </section>
 
