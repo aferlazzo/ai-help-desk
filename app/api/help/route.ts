@@ -16,6 +16,9 @@ const Q = {
   tasksAccount: 'Are you signed in to the same Google account that previously contained the tasks?',
   tasksWeb: 'Do the missing tasks appear at tasks.google.com?',
   tasksList: 'In Google Tasks, is a different task list selected?',
+  messagesScope: 'Are new text messages missing from only one person, or from everyone?',
+  messagesBlocked: 'In Google Messages, is that person listed under Spam & blocked?',
+  messagesSend: 'Can you send a text message successfully?',
 } as const;
 
 function validMessage(item: unknown): item is Message {
@@ -54,11 +57,15 @@ function nextReply(messages: Message[]) {
   const previous = originalQuestion([...messages].reverse().find((message) => message.role === 'helper')?.text);
 
   if (!previous || !Object.values(Q).includes(previous as never)) {
+    if (mentions(latest, ['google messages', 'conversation']) && mentions(latest, ['unread'])) {
+      return 'In Google Messages, touch and hold the conversation. Tap More (the three dots), then tap Mark as unread.';
+    }
     if (mentions(latest, ['printer', 'print'])) return Q.printerQueue;
     if (mentionsWebsite(latest) && mentions(latest, ['can\'t', 'cannot', 'unable', 'won\'t', 'not reach', 'not open', 'down'])) return Q.websiteOthers;
     if (mentions(latest, ['internet', 'wi-fi', 'wifi', 'online', 'connection'])) return Q.internetScope;
     if (mentions(latest, ['email', 'gmail', 'outlook', 'mail'])) return Q.emailScope;
     if (mentions(latest, ['google task', 'tasks missing', 'missing tasks'])) return Q.tasksAccount;
+    if (mentions(latest, ['text', 'texts', 'sms', 'google messages', 'message from', 'messages from'])) return Q.messagesScope;
     return 'ESCALATE: This problem is not in the guided help library yet. Please use the device or service provider’s official support channel.';
   }
 
@@ -107,6 +114,17 @@ function nextReply(messages: Message[]) {
     case Q.tasksList:
       return result === 'yes' ? 'Select each task list in turn; the missing tasks may be stored in another list.' :
         result === 'no' ? 'ESCALATE: The tasks are absent from the account and its lists. Use Google’s official support and recovery options.' : clarify(Q.tasksList);
+
+    case Q.messagesScope:
+      if (mentions(latest, ['only', 'one', 'person', 'someone', 'just'])) return Q.messagesBlocked;
+      if (mentions(latest, ['all', 'everyone', 'everybody', 'anyone'])) return Q.messagesSend;
+      return clarify(Q.messagesScope);
+    case Q.messagesBlocked:
+      return result === 'yes' ? 'Open Spam & blocked, select the conversation, and tap Unblock. Ask the person to send one new test message.' :
+        result === 'no' ? 'Ask that person to send one new test message. If it still does not arrive, contact your mobile carrier and give them the sender’s number and the time of the test.' : clarify(Q.messagesBlocked);
+    case Q.messagesSend:
+      return result === 'yes' ? 'Restart the phone once, then ask someone to send one new test message. If it does not arrive, contact your mobile carrier.' :
+        result === 'no' ? 'Check that Airplane mode is off and that the phone shows a mobile signal, then try sending one text again.' : clarify(Q.messagesSend);
     default:
       return 'ESCALATE: This guided path cannot determine the next safe step.';
   }
