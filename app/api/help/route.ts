@@ -35,7 +35,10 @@ function answer(text: string): Answer {
 
 function mentions(text: string, words: string[]) {
   const value = text.toLowerCase();
-  return words.some((word) => value.includes(word));
+  return words.some((word) => {
+    const escaped = word.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(value);
+  });
 }
 
 function mentionsWebsite(text: string) {
