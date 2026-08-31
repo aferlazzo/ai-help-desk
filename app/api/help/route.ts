@@ -1,4 +1,4 @@
-type Message = { role: 'helper' | 'user'; text: string };
+type Message = { role: 'helper' | 'user'; text: string; ai?: boolean };
 type Answer = 'yes' | 'no' | 'unknown';
 
 const Q = {
@@ -52,7 +52,7 @@ function originalQuestion(text: string | undefined) {
   return text?.startsWith(prefix) ? text.slice(prefix.length) : text;
 }
 
-function nextReply(messages: Message[]) {
+function guidedReply(messages: Message[]) {
   const latest = messages.filter((message) => message.role === 'user').at(-1)?.text.trim() || '';
   const previous = originalQuestion([...messages].reverse().find((message) => message.role === 'helper')?.text);
 
@@ -130,6 +130,40 @@ function nextReply(messages: Message[]) {
   }
 }
 
+function responseText(payload: unknown) {
+  if (!payload || typeof payload !== 'object' || !('output' in payload) || !Array.isArray(payload.output)) return '';
+  for (const item of payload.output) {
+    if (!item || typeof item !== 'object' || !('content' in item) || !Array.isArray(item.content)) continue;
+    for (const content of item.content) {
+      if (content && typeof content === 'object' && 'type' in content && content.type === 'output_text' &&
+        'text' in content && typeof content.text === 'string') return content.text.trim();
+    }
+  }
+  return '';
+}
+
+async function aiFallback(messages: Message[]) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return '';
+  const recent = messages.slice(-8).map((message) => ({
+    role: message.role === 'helper' ? 'assistant' : 'user',
+    content: message.text.slice(0, 500),
+  }));
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-5-nano',
+      store: false,
+      max_output_tokens: 200,
+      instructions: `You are a cautious consumer technology help desk. Continue the conversation with exactly one short, useful clarifying question OR one safe action. Use plain language and no checklist. Never ask for passwords, verification codes, payment details, full account numbers, or personal identifiers. Never advise disabling security, deleting data, factory resets, registry edits, opening hardware, or bypassing safeguards. Do not pretend to inspect the device. For suspected fraud, account takeover, physical danger, data loss, or when a safe next step cannot be determined, reply exactly: ESCALATE: Please use the device or service provider's official support channel.`,
+      input: recent,
+    }),
+  });
+  if (!response.ok) throw new Error(`OpenAI fallback failed with status ${response.status}`);
+  return responseText(await response.json()).slice(0, 700);
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { messages?: unknown };
@@ -137,7 +171,17 @@ export async function POST(request: Request) {
     const messages = body.messages.filter(validMessage);
     const latest = messages.at(-1);
     if (!latest || latest.role !== 'user' || !latest.text.trim()) return Response.json({ error: 'Please describe the problem.' }, { status: 400 });
-    return Response.json({ reply: nextReply(messages) });
+    const guided = guidedReply(messages);
+    if (!guided.startsWith('ESCALATE:')) return Response.json({ reply: guided, aiUsed: false });
+    const aiUses = messages.filter((message) => message.role === 'helper' && message.ai).length;
+    if (aiUses >= 3) return Response.json({ reply: guided, aiUsed: false });
+    try {
+      const fallback = await aiFallback(messages);
+      if (fallback) return Response.json({ reply: fallback, aiUsed: true });
+    } catch (error) {
+      console.error('AI fallback error', error);
+    }
+    return Response.json({ reply: guided, aiUsed: false });
   } catch (error) {
     console.error('AI Help Desk error', error);
     return Response.json({ error: 'AI Help Desk could not respond. Please try again.' }, { status: 500 });

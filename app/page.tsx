@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 
-type Message = { role: 'helper' | 'user'; text: string };
+type Message = { role: 'helper' | 'user'; text: string; ai?: boolean };
 
 const topics = [
   { icon: '◉', title: 'Internet', prompt: 'My internet is not working' },
@@ -33,9 +33,9 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: conversation }),
       });
-      const data = await response.json() as { reply?: string; error?: string };
+      const data = await response.json() as { reply?: string; error?: string; aiUsed?: boolean };
       if (!response.ok || !data.reply) throw new Error(data.error || 'Something went wrong.');
-      setMessages((current) => [...current, { role: 'helper', text: data.reply! }]);
+      setMessages((current) => [...current, { role: 'helper', text: data.reply!, ai: data.aiUsed }]);
     } catch (error) {
       setMessages((current) => [...current, { role: 'helper', text: error instanceof Error ? error.message : 'Please try again.' }]);
     } finally {
