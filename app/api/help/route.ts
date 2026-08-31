@@ -37,9 +37,14 @@ function clarify(question: string) {
   return `Please answer with the closest choice you see: ${question}`;
 }
 
+function originalQuestion(text: string | undefined) {
+  const prefix = 'Please answer with the closest choice you see: ';
+  return text?.startsWith(prefix) ? text.slice(prefix.length) : text;
+}
+
 function nextReply(messages: Message[]) {
   const latest = messages.filter((message) => message.role === 'user').at(-1)?.text.trim() || '';
-  const previous = [...messages].reverse().find((message) => message.role === 'helper')?.text;
+  const previous = originalQuestion([...messages].reverse().find((message) => message.role === 'helper')?.text);
 
   if (!previous || !Object.values(Q).includes(previous as never)) {
     if (mentions(latest, ['printer', 'print'])) return Q.printerQueue;
@@ -63,7 +68,7 @@ function nextReply(messages: Message[]) {
     case Q.internetScope:
       if (mentions(latest, ['all', 'every'])) return Q.internetGateway;
       if (mentions(latest, ['only', 'one', 'this device', 'just'])) return Q.internetWifi;
-      return 'Are all devices affected, or only one device?';
+      return clarify(Q.internetScope);
     case Q.internetWifi:
       return result === 'no' ? 'Connect the device to your usual Wi-Fi network, then try opening a website again.' :
         result === 'yes' ? 'Turn Wi-Fi off on this device, wait ten seconds, turn it back on, and try again.' : clarify(Q.internetWifi);
