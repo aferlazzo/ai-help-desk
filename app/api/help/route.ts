@@ -57,7 +57,7 @@ function nextReply(messages: Message[]) {
   const previous = originalQuestion([...messages].reverse().find((message) => message.role === 'helper')?.text);
 
   if (!previous || !Object.values(Q).includes(previous as never)) {
-    if (mentions(latest, ['google messages', 'conversation']) && mentions(latest, ['unread'])) {
+    if (mentions(latest, ['google messages', 'conversation', 'text message', 'message']) && mentions(latest, ['unread', 'looks unread'])) {
       return 'In Google Messages, touch and hold the conversation. Tap More (the three dots), then tap Mark as unread.';
     }
     if (mentions(latest, ['printer', 'print'])) return Q.printerQueue;
