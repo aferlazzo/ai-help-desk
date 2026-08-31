@@ -8,6 +8,8 @@ const Q = {
   internetScope: 'Are all devices unable to use the internet, or only this device?',
   internetWifi: 'Does this device show that it is connected to your usual Wi-Fi network?',
   internetGateway: 'Does your modem or gateway show a red or warning light?',
+  websiteOthers: 'Can you open other websites on this device?',
+  websiteDevice: 'Can another device open that same website?',
   emailScope: 'Can you receive new email, even though sending is not working?',
   emailWeb: 'Can you sign in and use the email account on its official website?',
   emailError: 'Does the email app show a specific error message?',
@@ -33,6 +35,11 @@ function mentions(text: string, words: string[]) {
   return words.some((word) => value.includes(word));
 }
 
+function mentionsWebsite(text: string) {
+  return mentions(text, ['website', 'web site', 'site', 'webpage', 'web page', 'browser']) ||
+    /\b(?:https?:\/\/|www\.)?[^\s.]+\.(?:com|org|net|edu|gov|io|co|us)\b/i.test(text);
+}
+
 function clarify(question: string) {
   return `Please answer with the closest choice you see: ${question}`;
 }
@@ -48,6 +55,7 @@ function nextReply(messages: Message[]) {
 
   if (!previous || !Object.values(Q).includes(previous as never)) {
     if (mentions(latest, ['printer', 'print'])) return Q.printerQueue;
+    if (mentionsWebsite(latest) && mentions(latest, ['can\'t', 'cannot', 'unable', 'won\'t', 'not reach', 'not open', 'down'])) return Q.websiteOthers;
     if (mentions(latest, ['internet', 'wi-fi', 'wifi', 'online', 'connection'])) return Q.internetScope;
     if (mentions(latest, ['email', 'gmail', 'outlook', 'mail'])) return Q.emailScope;
     if (mentions(latest, ['google task', 'tasks missing', 'missing tasks'])) return Q.tasksAccount;
@@ -75,6 +83,11 @@ function nextReply(messages: Message[]) {
     case Q.internetGateway:
       return result === 'yes' ? 'Restart the modem or gateway once, allow up to ten minutes for it to reconnect, then test the internet again.' :
         result === 'no' ? 'ESCALATE: All devices are affected without a gateway warning. Contact the internet provider to check the service connection.' : clarify(Q.internetGateway);
+    case Q.websiteOthers:
+      return result === 'yes' ? Q.websiteDevice : result === 'no' ? Q.internetScope : clarify(Q.websiteOthers);
+    case Q.websiteDevice:
+      return result === 'yes' ? 'The website is working, so the problem is limited to this device or browser. Open the website in a private or incognito window and try again.' :
+        result === 'no' ? 'The website may be temporarily unavailable. Wait a few minutes, then check the website’s official status or support page.' : clarify(Q.websiteDevice);
 
     case Q.emailScope:
       return result === 'yes' ? Q.emailError : result === 'no' ? Q.emailWeb : clarify(Q.emailScope);
