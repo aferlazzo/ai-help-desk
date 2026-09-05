@@ -1,0 +1,4 @@
+# Private runtime data — never commit tester identities or access data
+data/
+.env
+.env.*
