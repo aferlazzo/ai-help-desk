@@ -1,0 +1,19 @@
+name = "ai-help-desk-access-gateway"
+main = "worker.js"
+compatibility_date = "2026-09-04"
+
+# Copy this file to wrangler.toml before deployment.
+# Never commit real secret values.
+
+[vars]
+# The existing hosted Help Desk URL that this gateway protects.
+# Example only; verify the actual hosted origin before deployment.
+ORIGIN_URL = "https://REPLACE-WITH-HELP-DESK-ORIGIN.example.com"
+
+[[kv_namespaces]]
+binding = "TESTERS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Set these with Wrangler secrets, not in this file:
+#   npx wrangler secret put ADMIN_TOKEN
+#   npx wrangler secret put SESSION_SECRET
