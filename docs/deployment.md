@@ -20,28 +20,99 @@ node .\ai-help-desk-2-working-with-system-health.js
 
 Local browser URL: `http://127.0.0.1:4173`
 
-## Hosted deployment
+## Hosted tester access gateway
 
-The exact hosted/Cloudflare deployment procedure has **not yet been verified from the repository**. Before the next material hosted change, record:
+The repository now contains a Cloudflare Worker access gateway in `cloudflare/worker.js` plus a manual GitHub Actions deployment workflow in `.github/workflows/deploy-cloudflare-gateway.yml`.
 
-1. Cloudflare project/Worker name.
+The gateway is intentionally separate from the troubleshooting engine. It sits in front of the hosted Help Desk and provides controlled-beta access:
+
+- approved tester registration by name and email
+- a unique high-entropy invitation token per tester
+- only the SHA-256 token hash is stored in Cloudflare KV
+- secure HttpOnly session cookie after successful invitation use
+- lifecycle state moves to `Setup` when an invitation is issued and `Active` after first successful access
+- immediate `Disabled` state for revocation
+- all ordinary Help Desk paths are blocked unless a valid tester session exists
+- administrative endpoints require a separate secret bearer token
+
+### Cloudflare resources required
+
+Before first deployment create or identify:
+
+1. A Cloudflare Workers KV namespace for tester records.
+2. A Cloudflare API token permitted to deploy this Worker.
+3. The Cloudflare account ID.
+4. The verified hosted Help Desk origin URL that the gateway will protect and proxy to.
+5. A strong Help Desk admin token.
+6. A separate strong session-signing secret.
+
+### GitHub deployment configuration
+
+Configure these GitHub Actions repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_KV_NAMESPACE_ID`
+- `HELP_DESK_ADMIN_TOKEN`
+- `HELP_DESK_SESSION_SECRET`
+
+Configure this GitHub Actions repository variable:
+
+- `HELP_DESK_ORIGIN_URL`
+
+Do not put the actual values in tracked files.
+
+The deployment workflow is deliberately **manual (`workflow_dispatch`)** until these settings have been verified. This avoids generating failed-deployment emails on ordinary repository pushes.
+
+### Tester registration API after deployment
+
+`POST /admin/testers`
+
+Authenticated with:
+
+`Authorization: Bearer <HELP_DESK_ADMIN_TOKEN>`
+
+JSON body:
+
+```json
+{
+  "name": "Tester Name",
+  "email": "tester@example.com"
+}
+```
+
+The gateway returns a unique `inviteUrl`. That URL is what goes in the tester welcome email. Never save the returned raw invitation token in GitHub.
+
+Other administrative operations:
+
+- `GET /admin/testers` — list testers without token hashes
+- `POST /admin/testers/disable` with `{ "email": "tester@example.com" }` — revoke access
+
+The public `/health` endpoint may be used for a simple gateway smoke test.
+
+## Remaining hosted-origin audit
+
+The exact existing hosted Help Desk origin still must be verified before the gateway is deployed. Record:
+
+1. Current hosted project/Worker/site name.
 2. Where its source currently lives.
-3. Which GitHub commit corresponds to the deployed code.
-4. Deployment command/workflow.
-5. AI provider/model and bindings.
-6. Authentication configuration.
-7. Storage/telemetry configuration.
-8. Usage/cost controls.
-9. Verification/smoke-test procedure.
+3. Which GitHub commit, if any, corresponds to that deployed code.
+4. AI provider/model and bindings.
+5. Storage/telemetry configuration.
+6. Usage/cost controls.
 
-Until that audit is complete, do not claim that `main` automatically deploys to the tester site.
+Do not point the gateway at an assumed origin URL.
 
 ## Release verification
 
 Before inviting testers to a changed release, verify at least:
 
-- tester authentication works
-- unauthorized access is rejected
+- `/health` returns success
+- unauthorized access to `/` is rejected
+- a newly registered tester receives a unique invitation URL
+- the invitation URL establishes a secure session and redirects to the Help Desk
+- the tester becomes `Active` after first successful access
+- disabling the tester invalidates subsequent session requests
 - one-question/one-action behavior remains intact
 - ordinary how-to questions can be answered directly
 - troubleshooting sessions do not repeat questions
