@@ -1,0 +1,51 @@
+name: Deploy Help Desk Access Gateway
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/deploy-cloudflare-gateway.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Create Wrangler configuration
+        env:
+          KV_NAMESPACE_ID: ${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}
+          HELP_DESK_ORIGIN_URL: ${{ vars.HELP_DESK_ORIGIN_URL }}
+        run: |
+          test -n "$KV_NAMESPACE_ID"
+          test -n "$HELP_DESK_ORIGIN_URL"
+          cat > wrangler.toml <<EOF
+          name = "ai-help-desk-access-gateway"
+          main = "worker.js"
+          compatibility_date = "2026-09-04"
+
+          [vars]
+          ORIGIN_URL = "$HELP_DESK_ORIGIN_URL"
+
+          [[kv_namespaces]]
+          binding = "TESTERS"
+          id = "$KV_NAMESPACE_ID"
+          EOF
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy
