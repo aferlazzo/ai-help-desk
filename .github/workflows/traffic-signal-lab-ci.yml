@@ -1,0 +1,32 @@
+name: Traffic Signal Lab validation
+
+on:
+  push:
+    branches: [traffic-signal-lab-prototype]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate embedded JavaScript syntax
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('traffic-signal-lab.html','utf8');
+          const m=html.match(/<script>([\s\S]*?)<\/script>/i);
+          if(!m) throw new Error('No script block found');
+          new Function(m[1]);
+          console.log('Embedded JavaScript syntax OK');
+          NODE
+      - name: Check required safety/source labels
+        run: |
+          grep -q "Nothing here connects to or changes a real traffic signal" traffic-signal-lab.html
+          grep -q "Documented Tucson data" traffic-signal-lab.html
+          grep -q "Sandbox assumption" traffic-signal-lab.html
+          grep -q "TS-1811" traffic-signal-lab.html
