@@ -1,66 +1,40 @@
-# AI Help Desk
+# AI Help Desk — RETIRED LEGACY REPOSITORY
 
-AI Help Desk is a troubleshooting assistant designed for nontechnical users. Its core method is **ASK → SOLVE → ESCALATE**: gather one useful observation at a time, offer a safe solution when the evidence supports one, and escalate rather than guess.
+> **Retired:** This repository is no longer the production source for Helpdesk Assistant. Do not deploy it to Cloudflare, connect it to production data stores, or use it for tester administration.
+>
+> **Production source of truth:** `aferlazzo/helpdesk-assistant`
 
-## Source of truth
+This repository is retained only as historical reference for the earlier local Node/Ollama implementation and related experiments.
 
-- **Repository:** `aferlazzo/ai-help-desk`
-- **Authoritative branch:** `main`
-- **Known local working folder:** `C:\Users\aferl\Downloads\AI-Help-Desk-2-Working-System-Health`
-- **Known local application:** `ai-help-desk-2-working-with-system-health.js`
-- **Local URL:** `http://127.0.0.1:4173`
-- **Local AI path:** Node.js → Ollama at `127.0.0.1:11434` → `qwen3:8b`
+## Status
 
-The GitHub repository is the source of truth for tracked project code and documentation. The known local folder remains the development/fallback environment. Older `backup-*.js` files in the local folder are historical copies and should not be added to GitHub; Git provides version history going forward.
+- Production application: **DO NOT USE THIS REPOSITORY**
+- Cloudflare deployment: **RETIRED**
+- Tester administration: **RETIRED**
+- Local historical fallback/reference: retained only for source history
 
-## Current status
+The former GitHub Actions workflow capable of deploying the legacy Cloudflare access gateway has been removed so this repository cannot be redeployed accidentally through that workflow.
 
-The repository currently contains the known working local Node application. The hosted tester/Cloudflare implementation is being audited separately and must not be assumed to be identical to the local version until its deployment source, AI provider, model, limits, and cost path are verified.
+## Historical local application
 
-The local application includes:
+The earlier local application lived at:
 
-- Node HTTP server bound to localhost on port 4173
-- Local Ollama inference using `qwen3:8b`
-- ASK → SOLVE → ESCALATE diagnostic control
-- one-question-at-a-time and repeat-question protection
-- preference for observation before disruptive troubleshooting
-- direct answers for ordinary how-to/information questions
-- Windows System Health collection through PowerShell
-- in-memory troubleshooting sessions
+`C:\Users\aferl\Downloads\AI-Help-Desk-2-Working-System-Health`
 
-## Run the known local version
+with:
 
-Prerequisites: Windows, Node.js, Ollama, and the `qwen3:8b` model installed locally.
+`ai-help-desk-2-working-with-system-health.js`
 
-From PowerShell:
+It used Node.js, Ollama, and `qwen3:8b` and ran locally at `http://127.0.0.1:4173`.
 
-```powershell
-cd C:\Users\aferl\Downloads\AI-Help-Desk-2-Working-System-Health
-node .\ai-help-desk-2-working-with-system-health.js
-```
+## Current production
 
-Then open `http://127.0.0.1:4173` in a browser. Keep the PowerShell window open while using the local Help Desk. Press `Ctrl+C` to stop the Node server.
+Use only:
 
-## Local vs. hosted use
+`aferlazzo/helpdesk-assistant`
 
-- **Local Node/Ollama:** development, debugging, experimentation, and fallback. It runs AI inference on the local computer and does not use ChatGPT Plus to answer Help Desk questions.
-- **Hosted tester version:** intended for approved remote testers who should need only a URL and authentication. Its exact deployment and AI cost/limit path must be verified and documented before broad testing.
-- **GitHub:** versioned source and documentation connecting development and deployment.
+That repository is the authoritative production codebase for Helpdesk Assistant.
 
-Do not require testers to run Node, Ollama, know GitHub/Cloudflare, use Tony's laptop, or use Tony's ChatGPT account.
+## Security
 
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Configuration](docs/configuration.md)
-- [Deployment](docs/deployment.md)
-- [Testing](docs/testing.md)
-- [Tester process](docs/tester-process.md)
-- [Tester guide](docs/tester-guide.md)
-- [Known issues](docs/known-issues.md)
-- [Incident log](docs/incident-log.md)
-- [Changelog](CHANGELOG.md)
-
-## Security rule
-
-**Never commit passwords, tester access codes, API keys, tokens, credentials, or other secrets to this repository.** Use environment variables or the hosting provider's secret-management facility. Tester private conversations should not be stored in repository documentation.
+Never commit passwords, tester access codes, API keys, tokens, credentials, or private tester/customer data to this repository.
