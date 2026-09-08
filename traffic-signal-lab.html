@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tucson Traffic Signal Lab</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#202124;background:#f4f6f8}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1050px;margin:auto;padding:24px}.card{background:#fff;border:1px solid #d9dde3;border-radius:14px;padding:20px;margin-bottom:18px}h1,h2,h3{margin-top:0}.muted{color:#5f6368}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.fact{padding:12px;background:#f8fafc;border:1px solid #e3e7ec;border-radius:10px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;background:#eef2f7}.documented{background:#e7f4ea}.assumed{background:#fff3cd}.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.control{padding:14px;border:1px solid #e1e4e8;border-radius:10px}.control label{display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px}.control input{width:100%}.results{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resultbox{border:1px solid #ddd;border-radius:10px;padding:14px}.metric{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee}.metric:last-child{border-bottom:0}.good{font-weight:700}.warn{padding:12px;border-left:4px solid #777;background:#fafafa}.buttons{display:flex;gap:10px;flex-wrap:wrap}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer}button.primary{background:#202124;color:#fff}button.secondary{background:#e9ecef}.bar{height:14px;background:#e9ecef;border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:#555}.small{font-size:13px}.footer a{color:inherit}.intersection{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}.road{height:80px;background:#666;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:8px}.vertical{height:180px}.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}@media(max-width:700px){.results{grid-template-columns:1fr}.intersection{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Tucson Traffic Signal Lab</h1>
+    <p class="muted">Experiment with a sandbox copy of a real Tucson intersection. Nothing here connects to or changes a real traffic signal.</p>
+  </div>
+
+  <div class="card">
+    <h2>River Rd &amp; Campbell Ave</h2>
+    <div class="grid">
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Signal ID</strong><br>TS-1811</div>
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Owner</strong><br>City of Tucson</div>
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Detection</strong><br>Video</div>
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Left turns</strong><br>All four ways</div>
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Construction plan</strong><br>I-2000-010</div>
+      <div class="fact"><span class="tag documented">Documented</span><br><strong>Coordinates</strong><br>32.287166, -110.943878</div>
+    </div>
+    <div class="legend"><span class="tag documented">Documented Tucson data</span><span class="tag assumed">Sandbox assumption</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Reference sandbox</h2>
+    <p class="muted">The public record does not expose the live controller timing plan here, so these starting timing values are clearly marked as assumptions. They are only for experimentation.</p>
+    <div class="controls">
+      <div class="control"><label>Cycle length <span id="cycleVal">120 s</span></label><input id="cycle" type="range" min="60" max="180" step="5" value="120"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+      <div class="control"><label>River green <span id="riverVal">52 s</span></label><input id="river" type="range" min="20" max="90" step="1" value="52"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+      <div class="control"><label>Campbell green <span id="campbellVal">46 s</span></label><input id="campbell" type="range" min="20" max="90" step="1" value="46"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+      <div class="control"><label>Left-turn allocation <span id="leftVal">11 s</span></label><input id="left" type="range" min="5" max="25" step="1" value="11"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+      <div class="control"><label>River demand <span id="riverDemandVal">850 veh/hr</span></label><input id="riverDemand" type="range" min="200" max="1800" step="50" value="850"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+      <div class="control"><label>Campbell demand <span id="campbellDemandVal">1100 veh/hr</span></label><input id="campbellDemand" type="range" min="200" max="1800" step="50" value="1100"><div class="small"><span class="tag assumed">Assumed</span></div></div>
+    </div>
+    <div class="buttons" style="margin-top:14px"><button class="primary" id="simulate">Simulate changes</button><button class="secondary" id="reset">Reset reference</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Before / after comparison</h2>
+    <div class="results">
+      <div class="resultbox"><h3>Reference</h3><div id="referenceResults"></div></div>
+      <div class="resultbox"><h3>Your sandbox</h3><div id="sandboxResults"></div></div>
+    </div>
+    <div class="warn small" style="margin-top:14px">This is a deliberately simple educational model, not an engineering traffic analysis. It estimates relative effects from demand versus available green time. It does not represent Tucson's live controller settings or authorize changes to real equipment.</div>
+  </div>
+
+  <div class="card footer">
+    <h2>Source record</h2>
+    <p class="small">City of Tucson Traffic Signal &amp; Traffic Control Devices record for TS-1811 (River Rd &amp; Campbell Ave). Public record lists video detection, Tucson ownership, left turns all four ways, construction plan I-2000-010, coordinates, and scanned signal documents.</p>
+    <p class="small"><a href="https://maps-and-records.tucsonaz.gov/traffic-controls/details/150" target="_blank" rel="noopener">Open the City of Tucson source record</a></p>
+  </div>
+</div>
+<script>
+const defaults={cycle:120,river:52,campbell:46,left:11,riverDemand:850,campbellDemand:1100};
+const ids=['cycle','river','campbell','left','riverDemand','campbellDemand'];
+const suffix={cycle:' s',river:' s',campbell:' s',left:' s',riverDemand:' veh/hr',campbellDemand:' veh/hr'};
+function values(){return Object.fromEntries(ids.map(id=>[id,Number(document.getElementById(id).value)]));}
+function updateLabels(){for(const id of ids)document.getElementById(id+'Val').textContent=document.getElementById(id).value+suffix[id];}
+function model(v){
+  const lost=12;
+  const available=Math.max(20,v.cycle-lost-(2*v.left));
+  const riverShare=Math.max(.1,Math.min(.8,v.river/available));
+  const campShare=Math.max(.1,Math.min(.8,v.campbell/available));
+  const satFlow=1900;
+  const riverCap=satFlow*riverShare;
+  const campCap=satFlow*campShare;
+  const riverRatio=v.riverDemand/riverCap;
+  const campRatio=v.campbellDemand/campCap;
+  const delay=(cycle,ratio,share)=>Math.max(5,(cycle*(1-share)*0.42)*(1+Math.max(0,ratio-.65)*2.2));
+  const queue=ratio=>Math.max(1,Math.round(3+Math.max(0,ratio-.45)*18));
+  const throughput=(demand,cap)=>Math.round(Math.min(demand,cap));
+  const rd=delay(v.cycle,riverRatio,riverShare),cd=delay(v.cycle,campRatio,campShare);
+  return {riverDelay:rd,campDelay:cd,avgDelay:(rd+cd)/2,riverQueue:queue(riverRatio),campQueue:queue(campRatio),throughput:throughput(v.riverDemand,riverCap)+throughput(v.campbellDemand,campCap),worst:Math.max(riverRatio,campRatio)};
+}
+function render(target,r){
+  const status=r.worst<.85?'Comfortable':r.worst<1?'Near capacity':'Over capacity';
+  target.innerHTML=`
+    <div class="metric"><span>Avg estimated delay</span><strong>${r.avgDelay.toFixed(0)} sec/veh</strong></div>
+    <div class="metric"><span>River queue</span><strong>~${r.riverQueue} vehicles</strong></div>
+    <div class="metric"><span>Campbell queue</span><strong>~${r.campQueue} vehicles</strong></div>
+    <div class="metric"><span>Estimated throughput</span><strong>${r.throughput} veh/hr</strong></div>
+    <div class="metric"><span>Condition</span><strong>${status}</strong></div>`;
+}
+const reference=model(defaults);
+render(document.getElementById('referenceResults'),reference);
+render(document.getElementById('sandboxResults'),reference);
+for(const id of ids)document.getElementById(id).addEventListener('input',updateLabels);
+document.getElementById('simulate').addEventListener('click',()=>render(document.getElementById('sandboxResults'),model(values())));
+document.getElementById('reset').addEventListener('click',()=>{for(const [k,v] of Object.entries(defaults))document.getElementById(k).value=v;updateLabels();render(document.getElementById('sandboxResults'),reference);});
+updateLabels();
+</script>
+</body>
+</html>
